@@ -1,168 +1,169 @@
-import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Product } from "../lib/storage";
 
 interface AddProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddProduct: (product: {
-    name: string;
-    price: string;
-    description: string;
-    category: string;
-    image: File | null;
-  }) => void;
+  onAddProduct: (product: Product) => void;
+  onEditProduct: (product: Product) => void;
+  initialProduct: Product | null;
 }
+
+const initialProductState: Product = {
+  name: "",
+  price: "",
+  description: "",
+  category: "",
+  image: "",
+};
 
 export default function AddProductModal({
   isOpen,
   onClose,
   onAddProduct,
+  onEditProduct,
+  initialProduct,
 }: AddProductModalProps) {
-  const [productName, setProductName] = useState<string>("");
-  const [productPrice, setProductPrice] = useState<string>("");
-  const [productDescription, setProductDescription] = useState<string>("");
-  const [productCategory, setProductCategory] = useState<string>("");
-  const [productImage, setProductImage] = useState<File | null>(null);
+  const [product, setProduct] = useState<Product>(initialProductState);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setProductImage(e.target.files[0]);
+  useEffect(() => {
+    if (isOpen) {
+      if (initialProduct) {
+        setProduct(initialProduct);
+      } else {
+        setProduct(initialProductState);
+      }
+    }
+  }, [isOpen, initialProduct]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    if (name === "price") {
+      // Only allow numeric input for price
+      const numericValue = value.replace(/[^0-9.]/g, "");
+      setProduct((prev) => ({ ...prev, [name]: numericValue }));
+    } else {
+      setProduct((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  // const handleSubmit = (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   // Handle form submission logic here
-  //   console.log("Product added:", {
-  //     productName,
-  //     productPrice,
-  //     productDescription,
-  //     productCategory,
-  //     productImage,
-  //   });
-  //   onClose();
-  // };
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result;
+        if (result) {
+          setProduct((prev) => ({
+            ...prev,
+            image: result as string,
+          }));
+        }
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAddProduct({
-      name: productName,
-      price: productPrice,
-      description: productDescription,
-      category: productCategory,
-      image: productImage,
-    });
+    if (initialProduct) {
+      onEditProduct(product);
+    } else {
+      onAddProduct(product);
+    }
     onClose();
   };
 
-  if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-xl font-semibold mb-4">Add New Product</h2>
-        <form onSubmit={handleSubmit}>
-          {/* product name */}
-          <div className="mb-4">
-            <label
-              className="block text-left text-gray-700 font-medium mb-2"
-              htmlFor="productName"
-            >
-              Product Name
-            </label>
-            <input
-              type="text"
-              id="productName"
-              value={productName}
-              onChange={(e) => setProductName(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded"
-              required
-            />
-          </div>
-          {/* product price */}
-          <div className="mb-4">
-            <label
-              className="block text-left text-gray-700 font-medium mb-2"
-              htmlFor="productPrice"
-            >
-              Product Price
-            </label>
-            <input
-              type="text"
-              id="productPrice"
-              value={productPrice}
-              onChange={(e) => setProductPrice(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded"
-              required
-            />
-          </div>
-          {/* prpoduct description */}
-          <div className="mb-4">
-            <label
-              className="block text-left text-gray-700 font-medium mb-2"
-              htmlFor="productDescription"
-            >
-              Product Description
-            </label>
-            <textarea
-              id="productDescription"
-              value={productDescription}
-              onChange={(e) => setProductDescription(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded"
-              rows={3}
-              required
-            ></textarea>
-          </div>
-          {/* product category */}
-          <div className="mb-4">
-            <label
-              className="block text-left text-gray-700 font-medium mb-2"
-              htmlFor="productCategory"
-            >
-              Product Category
-            </label>
-            <input
-              type="text"
-              id="productCategory"
-              value={productCategory}
-              onChange={(e) => setProductCategory(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded"
-              required
-            />
-          </div>
-          {/* prpoduct image */}
-          <div className="mb-4">
-            <label
-              className="block text-left text-gray-700 font-medium mb-2"
-              htmlFor="productImage"
-            >
-              Product Image
-            </label>
-            <input
-              type="file"
-              id="productImage"
-              onChange={handleImageChange}
-              className="w-full p-2 border border-gray-300 rounded"
-              required
-            />
-          </div>
-          {/* buttons */}
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="mr-2 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Add Product
-            </button>
-          </div>
-        </form>
+    isOpen && (
+      <div className="fixed inset-0 flex items-center justify-center bg-gray-700 bg-opacity-50">
+        <div className="bg-white p-6 rounded-lg w-full max-w-md">
+          <h2 className="text-xl font-bold mb-4">
+            {initialProduct ? "Edit Product" : "Add New Product"}
+          </h2>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4 flex flex-col items-start">
+              <label className="block text-sm font-medium mb-1">Name</label>
+              <input
+                type="text"
+                name="name"
+                value={product.name}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded"
+                required
+              />
+            </div>
+            <div className="mb-4 flex flex-col items-start">
+              <label className="block text-sm font-medium mb-1">Price</label>
+              <input
+                type="text"
+                name="price"
+                value={product.price}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded"
+                required
+                pattern="^\d*\.?\d*$"
+                title="Please enter a valid number"
+              />
+            </div>
+            <div className="mb-4 flex flex-col items-start">
+              <label className="block text-sm font-medium mb-1">
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={product.description}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded resize-none"
+                rows={3}
+                required
+              />
+            </div>
+            <div className="mb-4 flex flex-col items-start">
+              <label className="block text-sm font-medium mb-1">Category</label>
+              <input
+                type="text"
+                name="category"
+                value={product.category}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded"
+                required
+              />
+            </div>
+            <div className="mb-4 flex flex-col items-start">
+              <label className="block text-sm font-medium mb-1">Image</label>
+              <input
+                type="file"
+                onChange={handleImageChange}
+                className="w-full"
+              />
+              {product.image && (
+                <img
+                  src={product.image}
+                  alt="Product"
+                  className="mt-2 max-h-48"
+                />
+              )}
+            </div>
+            <div className="flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                {initialProduct ? "Update Product" : "Add Product"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    )
   );
 }

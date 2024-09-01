@@ -12,6 +12,9 @@ const config: Config = {
         primary: "#3B82F6",
         secondary: "#10B981",
       },
+      textarea: {
+        resize: "none",
+      },
     },
   },
   plugins: [],
